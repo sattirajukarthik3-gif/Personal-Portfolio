@@ -1,0 +1,112 @@
+---
+import ThemeToggle from "./ThemeToggle.astro";
+
+const links = [
+  { href: "/", label: "Home" },
+  { href: "/about", label: "About" },
+  { href: "/projects", label: "Projects" },
+  { href: "/contact", label: "Contact" },
+];
+
+const currentPath = Astro.url.pathname;
+function isActive(href: string) {
+  if (href === "/") return currentPath === "/";
+  return currentPath.startsWith(href);
+}
+---
+
+{/*
+  Deliberately NOT using transition:persist here. Persisting the header would
+  keep the server-rendered active-link classes from the previous page (stale
+  highlight) and keep the mobile menu open across navigations.
+*/}
+<header
+  class="sticky top-0 z-50 border-b border-zinc-200 bg-white/80 backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/80"
+>
+  <nav class="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
+    <a href="/" class="font-display text-lg font-semibold tracking-tight">
+      Karthik Sattiraju
+    </a>
+
+    <div class="flex items-center gap-1">
+      <ul class="hidden items-center gap-1 sm:flex">
+        {
+          links.map((link) => (
+            <li>
+              <a
+                href={link.href}
+                class:list={[
+                  "rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                  isActive(link.href)
+                    ? "text-accent-600 dark:text-accent-400"
+                    : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-white",
+                ]}
+              >
+                {link.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+
+      <ThemeToggle />
+
+      <button
+        id="nav-toggle"
+        class="ml-1 flex h-8 w-8 flex-col items-center justify-center gap-1.5 sm:hidden"
+        aria-label="Toggle menu"
+        aria-expanded="false"
+      >
+        <span class="h-0.5 w-5 bg-current"></span>
+        <span class="h-0.5 w-5 bg-current"></span>
+      </button>
+    </div>
+  </nav>
+
+  <ul
+    id="nav-mobile-menu"
+    class="hidden flex-col gap-1 border-t border-zinc-200 px-6 py-3 sm:hidden dark:border-zinc-800"
+  >
+    {
+      links.map((link) => (
+        <li>
+          <a
+            href={link.href}
+            class:list={[
+              "block rounded-md px-3 py-2 text-sm font-medium",
+              isActive(link.href)
+                ? "text-accent-600 dark:text-accent-400"
+                : "text-zinc-600 dark:text-zinc-400",
+            ]}
+          >
+            {link.label}
+          </a>
+        </li>
+      ))
+    }
+  </ul>
+</header>
+
+<script>
+  import "../scripts/theme";
+
+  function setupNavToggle() {
+    const toggle = document.getElementById("nav-toggle");
+    const menu = document.getElementById("nav-mobile-menu");
+    if (!toggle || !menu) return;
+
+    // Guard against binding twice to the same node if this runs more than once.
+    if (toggle.dataset.bound === "true") return;
+    toggle.dataset.bound = "true";
+
+    toggle.addEventListener("click", () => {
+      const isOpen = menu.classList.toggle("flex");
+      menu.classList.toggle("hidden", !isOpen);
+      toggle.setAttribute("aria-expanded", String(isOpen));
+    });
+  }
+
+  // astro:page-load covers both the initial load and every ClientRouter
+  // navigation, and the header is re-rendered each time (no transition:persist).
+  document.addEventListener("astro:page-load", setupNavToggle);
+</script>

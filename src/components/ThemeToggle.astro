@@ -1,0 +1,117 @@
+---
+/*
+ * Light/dark toggle.
+ *
+ * The sun/moon transition is a single morphing shape rather than two swapped
+ * icons: an offscreen mask circle slides across the orb to carve it into a
+ * crescent, while the rays retract and the whole icon rotates.
+ *
+ * Animated with CSS transitions rather than JS so it keeps working when
+ * requestAnimationFrame is throttled (background tabs) — same reasoning as
+ * the scroll reveals in scripts/animations.ts.
+ *
+ * Rendered exactly once per page; the SVG mask uses a fixed id, so a second
+ * instance would collide.
+ */
+---
+
+<button
+  id="theme-toggle"
+  type="button"
+  class="theme-toggle grid h-9 w-9 place-items-center rounded-full text-zinc-600 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-white"
+  aria-label="Switch to dark theme"
+  title="Switch theme"
+>
+  <svg
+    class="theme-icon"
+    width="20"
+    height="20"
+    viewBox="0 0 24 24"
+    fill="none"
+    aria-hidden="true"
+  >
+    <mask id="theme-moon-mask">
+      <rect x="0" y="0" width="24" height="24" fill="white"></rect>
+      <circle class="moon-cutout" cx="19" cy="7" r="7" fill="black"></circle>
+    </mask>
+
+    <circle
+      class="orb"
+      cx="12"
+      cy="12"
+      r="5.5"
+      fill="currentColor"
+      mask="url(#theme-moon-mask)"></circle>
+
+    <g class="rays" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+      <line x1="12" y1="1.8" x2="12" y2="3.6"></line>
+      <line x1="12" y1="20.4" x2="12" y2="22.2"></line>
+      <line x1="1.8" y1="12" x2="3.6" y2="12"></line>
+      <line x1="20.4" y1="12" x2="22.2" y2="12"></line>
+      <line x1="4.4" y1="4.4" x2="5.7" y2="5.7"></line>
+      <line x1="18.3" y1="18.3" x2="19.6" y2="19.6"></line>
+      <line x1="4.4" y1="19.6" x2="5.7" y2="18.3"></line>
+      <line x1="18.3" y1="5.7" x2="19.6" y2="4.4"></line>
+    </g>
+  </svg>
+</button>
+
+<style>
+  .theme-icon {
+    /* Anchor every transform to the centre of the 24x24 viewBox. */
+    transform-box: view-box;
+    transform-origin: center;
+    transition: transform 0.5s cubic-bezier(0.5, 0.25, 0, 1);
+  }
+
+  .orb,
+  .rays,
+  .moon-cutout {
+    transform-box: view-box;
+    transform-origin: center;
+    transition:
+      transform 0.5s cubic-bezier(0.5, 0.25, 0, 1),
+      opacity 0.35s ease;
+  }
+
+  /* Light: cutout parked off the orb, rays extended — a full sun. */
+  .moon-cutout {
+    transform: translate(6px, -6px);
+  }
+
+  /* Dark: icon rotates, orb grows, cutout slides in to carve the crescent,
+     and the rays retract into the centre. */
+  :global(html.dark) .theme-icon {
+    transform: rotate(-140deg);
+  }
+
+  :global(html.dark) .orb {
+    transform: scale(1.12);
+  }
+
+  :global(html.dark) .moon-cutout {
+    transform: translate(0, 0);
+  }
+
+  :global(html.dark) .rays {
+    transform: scale(0.4) rotate(45deg);
+    opacity: 0;
+  }
+
+  .theme-toggle:active .theme-icon {
+    transform: scale(0.85);
+  }
+
+  :global(html.dark) .theme-toggle:active .theme-icon {
+    transform: rotate(-140deg) scale(0.85);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .theme-icon,
+    .orb,
+    .rays,
+    .moon-cutout {
+      transition: none;
+    }
+  }
+</style>
